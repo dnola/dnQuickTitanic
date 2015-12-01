@@ -2,10 +2,10 @@ import sklearn.pipeline as skpipe
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 import sklearn.cross_validation as cv
-from helpers import PandasEncoder
 import numpy as np
-
 pd.options.mode.chained_assignment = None # Pandas is whiny, so we shut it up
+
+from helpers import PandasEncoder,Printer
 
 data = pd.read_csv("train.csv")
 data_test = pd.read_csv("test.csv")
@@ -23,18 +23,23 @@ test = fix_frame(data_test[features])
 
 
 pipe = skpipe.Pipeline([
+    ('printer1',Printer()), # You can delete the printers - they are there to help you
     ('to_numbers',PandasEncoder()), # One hot encodes a pandas frame - everything except numbers
+    ('printer2',Printer()),
     ('random_forest',RandomForestClassifier(n_estimators=100))
 ])
 
-score = np.mean(cv.cross_val_score(pipe,train,train_labels,cv=5,n_jobs=-1))
-print("Estimated score over 5 tests:",score)
+score = np.mean(cv.cross_val_score(pipe,train,train_labels,cv=5,n_jobs=1)) # set n_jobs to -1 to run each test on a different processor - much faster
+
 
 pipe.fit(train,train_labels)
 predictions = pipe.predict(test)
 
 pd.DataFrame(predictions,index=test_ids,columns=["Survived"]).to_csv("submission.csv")
+
+print("Estimated score over 5 tests:",score)
 print("Done writing to file")
+
 
 
 
